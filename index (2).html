@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPPAY TERMINAL</title>
+    <style>
+        /* РЕСЕТ И ОСНОВНЫЕ СТИЛИ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: #000000;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* КНОПКА IP В ЛЕВОМ ВЕРХНЕМ УГЛУ */
+        .ip-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(128, 128, 128, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 900;
+            color: #888888;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .ip-button:hover {
+            background: rgba(128, 128, 128, 0.3);
+            color: #ffffff;
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+        }
+        
+        .ip-button:active {
+            transform: scale(0.95);
+        }
+        
+        /* ГЛАВНЫЙ ЭКРАН */
+        .main-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        /* ЕДИНАЯ ПЕРЕЛИВАЮЩАЯСЯ РАМКА ВОКРУГ ВСЕГО ЭКРАНА */
+        .rainbow-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 4px;
+            z-index: 2;
+            box-sizing: border-box;
+        }
+        
+        .rainbow-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                #ff0000 0%,
+                #ff9900 10%,
+                #ffff00 20%,
+                #33ff00 30%,
+                #00ffff 40%,
+                #0066ff 50%,
+                #6600ff 60%,
+                #ff00ff 70%,
+                #ff0066 80%,
+                #ff0000 90%,
+                #ff0000 100%
+            );
+            background-size: 1000% 100%;
+            animation: rainbow-flow 8s linear infinite;
+            mask: 
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            -webkit-mask-composite: xor;
+            padding: 4px;
+            border-radius: 0;
+        }
+        
+        /* ЦЕНТРАЛЬНЫЙ БЛЮР ЭФФЕКТ - ТЁМНЕЕ К ЦЕНТРУ */
+        .center-blur {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 80px); /* 2 см с каждой стороны на телефоне */
+            height: calc(100% - 80px);
+            background: radial-gradient(
+                circle at center,
+                rgba(0, 0, 0, 0.8) 0%,
+                rgba(0, 0, 0, 0.9) 30%,
+                rgba(0, 0, 0, 0.95) 50%,
+                rgba(0, 0, 0, 1) 100%
+            );
+            backdrop-filter: blur(15px);
+            z-index: 3;
+            border-radius: 30px;
+            box-shadow: 
+                inset 0 0 100px rgba(0, 0, 0, 0.7),
+                0 0 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* ЦЕНТРАЛЬНЫЙ ТЕКСТ */
+        .center-text-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .center-text {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00ff66;
+            text-shadow: 0 0 30px rgba(0, 255, 102, 0.7);
+            opacity: 0;
+            transition: opacity 1s ease;
+            margin-bottom: 10px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(0, 255, 102, 0.4);
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.5),
+                inset 0 0 30px rgba(0, 255, 102, 0.1);
+        }
+        
+        .moscow-time {
+            font-size: 18px;
+            color: #00ff66;
+            font-weight: 500;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            animation: time-pulse 3s infinite;
+            box-shadow: 
+                0 5px 20px rgba(0, 0, 0, 0.4),
+                inset 0 0 15px rgba(0, 255, 102, 0.1);
+        }
+        
+        /* NFC ЗОНА В ВЕРХНЕЙ ЧАСТИ ЭКРАНА (ГДЕ ФРОНТАЛЬНАЯ КАМЕРА) */
+        .nfc-zone {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 50px;
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 102, 0.4) 0%, 
+                rgba(0, 212, 163, 0.6) 50%, 
+                rgba(0, 255, 102, 0.4) 100%);
+            border-radius: 25px;
+            z-index: 15;
+            pointer-events: none;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 102, 0.7),
+                inset 0 0 25px rgba(0, 255, 102, 0.4),
+                0 5px 25px rgba(0, 0, 0, 0.5);
+            animation: nfc-pulse 2s infinite alternate;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(0, 255, 102, 0.6);
+        }
+        
+        .nfc-zone::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            background: rgba(0, 212, 163, 0.3);
+            border-radius: 33px;
+            animation: nfc-pulse-outer 2.5s infinite alternate;
+            filter: blur(8px);
+            z-index: -1;
+        }
+        
+        .nfc-text {
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(0, 255, 102, 0.9);
+        }
+        
+        /* МЕНЮ ВВОДА СУММЫ ПОКУПКИ */
+        .amount-input-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            backdrop-filter: blur(30px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .amount-title {
+            font-size: 32px;
+            font-weight: 900;
+            color: #00ff66;
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .amount-input-container {
+            position: relative;
+            width: 300px;
+            margin-bottom: 40px;
+        }
+        
+        .amount-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid rgba(0, 255, 102, 0.5);
+            border-radius: 20px;
+            padding: 25px;
+            color: #00ff66;
+            font-size: 48px;
+            font-weight: 900;
+            text-align: center;
+            outline: none;
+            caret-color: #00ff66;
+        }
+        
+        .amount-input::placeholder {
+            color: rgba(0, 255, 102, 0.3);
+        }
+        
+        .amount-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 300px;
+        }
+        
+        .amount-btn {
+            padding: 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .amount-btn.confirm {
+            background: linear-gradient(135deg, #00ff66 0%, #00cc52 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 255, 102, 0.3);
+        }
+        
+        .amount-btn.cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #888888;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .amount-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .amount-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* МЕНЮ ОПЛАТЫ - НОВЫЙ ДИЗАЙН */
+        .payment-modal-new {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            padding: 30px;
+        }
+        
+        .payment-header-new {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 255, 102, 0.3);
+        }
+        
+        .payment-menu-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ff66;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .signal-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 255, 102, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .signal-icon:hover {
+            background: rgba(0, 255, 102, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .signal-icon::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: rgba(0, 255, 102, 0.3);
+            border-radius: 14px;
+            filter: blur(8px);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .signal-icon:hover::before {
+            opacity: 1;
+        }
+        
+        .signal-icon i {
+            font-size: 20px;
+            color: #00ff66;
+        }
+        
+        .payment-amount-section {
+            text-align: center;
+            margin: 60px 0;
+        }
+        
+        .payment-label {
+            font-size: 20px;
+            color: #888888;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .payment-amount-new {
+            font-size: 64px;
+            font-weight: 900;
+            color: #00ff66;
+            text-shadow: 0 0 30px rgba(0, 255, 102, 0.5);
+            letter-spacing: 2px;
+            position: relative;
+        }
+        
+        .payment-amount-new::after {
+            content: '₽';
+            font-size: 48px;
+            margin-left: 10px;
+            color: #00ff66;
+            opacity: 0.8;
+        }
+        
+        .payment-actions {
+            margin-top: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+        
+        .payment-action-button {
+            width: 100%;
+            max-width: 400px;
+            padding: 25px;
+            border: 2px solid rgba(0, 255, 102, 0.3);
+            border-radius: 20px;
+            background: rgba(0, 255, 102, 0.1);
+            color: #00ff66;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-action-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(0, 255, 102, 0.2) 50%, 
+                transparent 100%);
+            transition: left 0.5s;
+        }
+        
+        .payment-action-button:hover::before {
+            left: 100%;
+        }
+        
+        .payment-action-button:hover {
+            background: rgba(0, 255, 102, 0.2);
+            border-color: #00ff66;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 102, 0.2);
+        }
+        
+        .payment-action-button:active {
+            transform: translateY(0);
+        }
+        
+        .action-button-icon {
+            font-size: 24px;
+        }
+        
+        .payment-hint {
+            font-size: 14px;
+            color: #666666;
+            text-align: center;
+            margin-top: 40px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* СТАТУСНЫЕ СООБЩЕНИЯ */
+        .status-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .status-content {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            border-radius: 30px;
+            padding: 50px 40px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            border: 3px solid;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: statusAppear 0.4s ease;
+        }
+        
+        .status-content.success {
+            border-color: #00ff66;
+        }
+        
+        .status-content.error {
+            border-color: #ff4444;
+        }
+        
+        .status-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+        }
+        
+        .status-icon.success {
+            color: #00ff66;
+        }
+        
+        .status-icon.error {
+            color: #ff4444;
+        }
+        
+        .status-text {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        
+        .status-details {
+            font-size: 18px;
+            color: #888888;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        .status-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 15px;
+            padding: 18px 40px;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .status-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* АНИМАЦИИ */
+        @keyframes rainbow-flow {
+            0% {
+                background-position: 0% 0%;
+            }
+            100% {
+                background-position: 1000% 0%;
+            }
+        }
+        
+        @keyframes nfc-pulse {
+            0% { 
+                box-shadow: 
+                    0 0 40px rgba(0, 255, 102, 0.4),
+                    inset 0 0 20px rgba(0, 255, 102, 0.3);
+                transform: translateX(-50%) scale(0.95);
+            }
+            100% { 
+                box-shadow: 
+                    0 0 80px rgba(0, 255, 102, 0.8),
+                    inset 0 0 40px rgba(0, 255, 102, 0.5);
+                transform: translateX(-50%) scale(1.05);
+            }
+        }
+        
+        @keyframes nfc-pulse-outer {
+            0% { 
+                opacity: 0.4;
+                transform: scale(0.95);
+            }
+            100% { 
+                opacity: 0.9;
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes statusAppear {
+            from { opacity: 0; transform: scale(0.8) rotate(-10deg); }
+            to { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        
+        @keyframes time-pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes signal-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- КНОПКА IP В ЛЕВОМ ВЕРХНЕМ УГЛУ -->
+    <div class="ip-button" id="ipButton">
+        IP
+    </div>
+    
+    <!-- ГЛАВНЫЙ ЭКРАН -->
+    <div class="main-screen">
+        <!-- ЕДИНАЯ ПЕРЕЛИВАЮЩАЯСЯ РАМКА -->
+        <div class="rainbow-border"></div>
+        
+        <!-- ЦЕНТРАЛЬНЫЙ БЛЮР ЭФФЕКТ -->
+        <div class="center-blur"></div>
+        
+        <!-- NFC ЗОНА В ВЕРХНЕЙ ЧАСТИ (ГДЕ ФРОНТАЛЬНАЯ КАМЕРА) -->
+        <div class="nfc-zone">
+            <div class="nfc-text">NFC</div>
+        </div>
+        
+        <!-- ЦЕНТРАЛЬНЫЙ ТЕКСТ С МОСКОВСКИМ ВРЕМЕНЕМ -->
+        <div class="center-text-container">
+            <div class="center-text" id="centerText">
+                IPPAY TERMINAL
+            </div>
+            <div class="moscow-time" id="moscowTime">
+                Загрузка времени...
+            </div>
+        </div>
+    </div>
+    
+    <!-- МЕНЮ ВВОДА СУММЫ -->
+    <div class="amount-input-modal" id="amountInputModal">
+        <div class="amount-title">ВВЕДИТЕ СУММУ</div>
+        <div class="amount-input-container">
+            <input type="text" 
+                   class="amount-input" 
+                   id="amountInput"
+                   placeholder="0"
+                   inputmode="numeric">
+        </div>
+        <div class="amount-buttons">
+            <button class="amount-btn confirm" id="confirmAmountBtn">
+                ПОДТВЕРДИТЬ
+            </button>
+            <button class="amount-btn cancel" id="cancelAmountBtn">
+                ОТМЕНА
+            </button>
+        </div>
+    </div>
+    
+    <!-- МЕНЮ ОПЛАТЫ -->
+    <div class="payment-modal-new" id="paymentModalNew">
+        <div class="payment-header-new">
+            <div class="payment-menu-title">
+                <i class="fas fa-qrcode"></i>
+                IPPAY MENU
+            </div>
+            <div class="signal-icon" id="signalCloseBtn">
+                <i class="fas fa-wifi"></i>
+            </div>
+        </div>
+        
+        <div class="payment-amount-section">
+            <div class="payment-label">К ОПЛАТЕ</div>
+            <div class="payment-amount-new" id="paymentAmountNew">
+                0.00
+            </div>
+        </div>
+        
+        <div class="payment-actions">
+            <button class="payment-action-button" id="nfcPaymentBtn">
+                <div class="action-button-icon">
+                    <i class="fas fa-wifi"></i>
+                </div>
+                ОПЛАТА ПО NFC
+            </button>
+            
+            <button class="payment-action-button" id="resetPaymentBtn">
+                <div class="action-button-icon">
+                    <i class="fas fa-redo"></i>
+                </div>
+                СБРОСИТЬ ПОКУПКУ
+            </button>
+        </div>
+        
+        <div class="payment-hint">
+            Приложите карту или телефон с NFC к верхней части экрана
+        </div>
+    </div>
+    
+    <!-- СТАТУС УСПЕШНОЙ ОПЛАТЫ -->
+    <div class="status-modal" id="successStatus">
+        <div class="status-content success">
+            <div class="status-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="status-text">ОПЛАТА УСПЕШНА</div>
+            <div class="status-details" id="successMessage">
+                Спасибо за покупку!
+            </div>
+            <button class="status-close" id="closeSuccess">
+                ЗАКРЫТЬ
+            </button>
+        </div>
+    </div>
+    
+    <!-- СТАТУС ОШИБКИ -->
+    <div class="status-modal" id="errorStatus">
+        <div class="status-content error">
+            <div class="status-icon error">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="status-text">СИМУЛЯЦИЯ ОШИБКИ</div>
+            <div class="status-details" id="errorMessage">
+                Недостаточно средств (демо режим)
+            </div>
+            <button class="status-close" id="closeError">
+                ПОНЯТНО
+            </button>
+        </div>
+    </div>
+    
+    <!-- АУДИО -->
+    <audio id="clickSound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/250/250-preview.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="successSound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/286/286-preview.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="errorSound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/299/299-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // СОСТОЯНИЕ СИСТЕМЫ
+        let currentAmount = 0;
+        let paymentCreated = false;
+        let currentTextIndex = 0;
+        let textChangeInterval = null;
+        
+        // СПИСОК ТЕКСТОВ
+        const texts = [
+            "Эй, а какой кэшбэк за кофе?",
+            "Эй, слышал о Атлас банке?",
+            "Платите, как вам удобно: По NFC или по карте",
+            "Оплата NFC - это удобно!",
+            "Подключайся к Атлас банку!"
+        ];
+        let lastTextIndex = -1;
+        
+        // ЭЛЕМЕНТЫ DOM
+        const ipButton = document.getElementById('ipButton');
+        const centerText = document.getElementById('centerText');
+        const moscowTime = document.getElementById('moscowTime');
+        const amountInputModal = document.getElementById('amountInputModal');
+        const amountInput = document.getElementById('amountInput');
+        const confirmAmountBtn = document.getElementById('confirmAmountBtn');
+        const cancelAmountBtn = document.getElementById('cancelAmountBtn');
+        const paymentModalNew = document.getElementById('paymentModalNew');
+        const paymentAmountNew = document.getElementById('paymentAmountNew');
+        const nfcPaymentBtn = document.getElementById('nfcPaymentBtn');
+        const resetPaymentBtn = document.getElementById('resetPaymentBtn');
+        const signalCloseBtn = document.getElementById('signalCloseBtn');
+        const successStatus = document.getElementById('successStatus');
+        const errorStatus = document.getElementById('errorStatus');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const closeSuccess = document.getElementById('closeSuccess');
+        const closeError = document.getElementById('closeError');
+        
+        // АУДИО
+        const clickSound = document.getElementById('clickSound');
+        const successSound = document.getElementById('successSound');
+        const errorSound = document.getElementById('errorSound');
+        
+        // ИНИЦИАЛИЗАЦИЯ
+        document.addEventListener('DOMContentLoaded', function() {
+            initSystem();
+            setupEventListeners();
+            startTextRotation();
+            getMoscowTime();
+            setInterval(getMoscowTime, 60000); // Обновлять каждую минуту
+        });
+        
+        function initSystem() {
+            showText("IPPAY TERMINAL");
+        }
+        
+        function setupEventListeners() {
+            // КНОПКА IP - ТРОЙНОЕ НАЖАТИЕ ДЛЯ ВВОДА СУММЫ
+            let ipClickCount = 0;
+            let ipClickTimer = null;
+            
+            ipButton.addEventListener('click', function() {
+                ipClickCount++;
+                
+                if (ipClickTimer) {
+                    clearTimeout(ipClickTimer);
+                }
+                
+                ipClickTimer = setTimeout(() => {
+                    if (ipClickCount === 3) {
+                        // Тройное нажатие - ввод суммы
+                        playClickSound();
+                        showAmountInputModal();
+                    }
+                    
+                    ipClickCount = 0;
+                }, 500);
+                
+                // Анимация нажатия
+                ipButton.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    ipButton.style.transform = '';
+                }, 150);
+            });
+            
+            // ВВОД СУММЫ
+            confirmAmountBtn.addEventListener('click', function() {
+                const amount = parseFloat(amountInput.value.replace(',', '.')) || 0;
+                
+                if (amount <= 0) {
+                    shakeElement(amountInputModal);
+                    return;
+                }
+                
+                currentAmount = amount;
+                paymentCreated = true;
+                
+                playClickSound();
+                showPaymentModal();
+                hideAmountInputModal();
+                updatePaymentAmountDisplay();
+                showText(`Ожидание оплаты: ${formatAmount(currentAmount)} ₽`);
+            });
+            
+            cancelAmountBtn.addEventListener('click', function() {
+                playClickSound();
+                hideAmountInputModal();
+            });
+            
+            // ВВОД СУММЫ - только цифры и запятая/точка
+            amountInput.addEventListener('input', function(e) {
+                // Разрешаем цифры, точку и запятую
+                this.value = this.value.replace(/[^0-9.,]/g, '');
+                
+                // Заменяем запятую на точку
+                this.value = this.value.replace(',', '.');
+                
+                // Удаляем лишние точки
+                const parts = this.value.split('.');
+                if (parts.length > 2) {
+                    this.value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
+                // Ограничиваем до 2 знаков после запятой
+                if (parts[1] && parts[1].length > 2) {
+                    this.value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+            });
+            
+            amountInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    confirmAmountBtn.click();
+                }
+            });
+            
+            // NFC ОПЛАТА
+            nfcPaymentBtn.addEventListener('click', function() {
+                if (!paymentCreated || currentAmount <= 0) {
+                    return;
+                }
+                
+                simulateNFCPayment();
+            });
+            
+            // СБРОС ПОКУПКИ
+            resetPaymentBtn.addEventListener('click', function() {
+                playClickSound();
+                paymentCreated = false;
+                currentAmount = 0;
+                hidePaymentModal();
+                showRandomText();
+            });
+            
+            // ЗАКРЫТИЕ МЕНЮ ОПЛАТЫ (сигнал WiFi)
+            signalCloseBtn.addEventListener('click', function() {
+                playClickSound();
+                hidePaymentModal();
+                paymentCreated = false;
+                currentAmount = 0;
+                showRandomText();
+            });
+            
+            // ЗАКРЫТИЕ СТАТУСНЫХ ОКОН
+            closeSuccess.addEventListener('click', function() {
+                playClickSound();
+                hideSuccessStatus();
+                hidePaymentModal();
+                paymentCreated = false;
+                currentAmount = 0;
+                showRandomText();
+            });
+            
+            closeError.addEventListener('click', function() {
+                playClickSound();
+                hideErrorStatus();
+            });
+            
+            // ЗАКРЫТИЕ ПО ESCAPE
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (amountInputModal.style.display === 'flex') {
+                        hideAmountInputModal();
+                    } else if (paymentModalNew.style.display === 'flex') {
+                        hidePaymentModal();
+                        paymentCreated = false;
+                        currentAmount = 0;
+                    } else if (successStatus.style.display === 'flex') {
+                        hideSuccessStatus();
+                    } else if (errorStatus.style.display === 'flex') {
+                        hideErrorStatus();
+                    }
+                }
+                
+                // Тестовые горячие клавиши
+                if (e.ctrlKey && e.key === '1') {
+                    showAmountInputModal();
+                }
+                if (e.ctrlKey && e.key === '2' && paymentCreated) {
+                    simulateNFCPayment();
+                }
+            });
+            
+            // ЭМУЛЯЦИЯ NFC ПРИ ПРИЛОЖЕНИИ КАРТЫ К ВЕРХНЕЙ ЧАСТИ ЭКРАНА
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 0) {
+                    const touchY = e.touches[0].clientY;
+                    // Если касание в верхней части экрана (где NFC зона)
+                    if (touchY < 100 && paymentCreated) {
+                        simulateNFCPayment();
+                    }
+                }
+            });
+            
+            // Для ПК - имитация NFC по пробелу
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' && paymentCreated) {
+                    simulateNFCPayment();
+                }
+            });
+        }
+        
+        // NFC ОПЛАТА
+        function simulateNFCPayment() {
+            if (!paymentCreated || currentAmount <= 0) {
+                return;
+            }
+            
+            // Анимация обработки NFC
+            showText("NFC оплата обрабатывается...");
+            
+            setTimeout(() => {
+                // 50% вероятность успеха, 50% ошибки (для демо)
+                const isSuccess = Math.random() > 0.5;
+                
+                if (isSuccess) {
+                    // УСПЕШНАЯ NFC ОПЛАТА
+                    successMessage.innerHTML = `
+                        Сумма: ${formatAmount(currentAmount)} ₽<br>
+                        <small style="color: #666;">Транзакция завершена успешно</small>
+                    `;
+                    
+                    playSuccessSound();
+                    showSuccessStatus();
+                    
+                    // Сброс
+                    paymentCreated = false;
+                    currentAmount = 0;
+                    
+                    setTimeout(() => {
+                        hideSuccessStatus();
+                        hidePaymentModal();
+                        showRandomText();
+                    }, 3000);
+                    
+                } else {
+                    // ОШИБКА NFC ОПЛАТЫ
+                    errorMessage.textContent = `Недостаточно средств (демо режим)`;
+                    
+                    playErrorSound();
+                    showErrorStatus();
+                }
+            }, 1500);
+        }
+        
+        // РОТАЦИЯ ТЕКСТОВ
+        function startTextRotation() {
+            textChangeInterval = setInterval(showRandomText, 8000);
+            
+            // Первый текст через 2 секунды
+            setTimeout(() => {
+                showRandomText();
+            }, 2000);
+        }
+        
+        function showRandomText() {
+            if (!paymentCreated) {
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * texts.length);
+                } while (newIndex === lastTextIndex && texts.length > 1);
+                
+                lastTextIndex = newIndex;
+                showText(texts[newIndex]);
+            }
+        }
+        
+        function showText(text) {
+            centerText.style.opacity = '0';
+            setTimeout(() => {
+                centerText.textContent = text;
+                centerText.style.opacity = '1';
+            }, 500);
+        }
+        
+        // ФОРМАТИРОВАНИЕ СУММЫ
+        function formatAmount(amount) {
+            return amount.toFixed(2).replace('.', ',');
+        }
+        
+        function updatePaymentAmountDisplay() {
+            paymentAmountNew.textContent = formatAmount(currentAmount);
+        }
+        
+        // ПОЛУЧЕНИЕ МОСКОВСКОГО ВРЕМЕНИ
+        async function getMoscowTime() {
+            try {
+                // Пробуем получить время из нескольких источников
+                const timeSources = [
+                    'https://worldtimeapi.org/api/timezone/Europe/Moscow',
+                    'https://timeapi.io/api/Time/current/zone?timeZone=Europe/Moscow'
+                ];
+                
+                let moscowTimeData = null;
+                let source = '';
+                
+                for (const timeSource of timeSources) {
+                    try {
+                        const response = await fetch(timeSource, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json'
+                            },
+                            mode: 'cors'
+                        });
+                        
+                        if (response.ok) {
+                            moscowTimeData = await response.json();
+                            source = timeSource;
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`Источник ${timeSource} недоступен:`, error);
+                        continue;
+                    }
+                }
+                
+                if (moscowTimeData) {
+                    // Обрабатываем данные в зависимости от источника
+                    let timeStr;
+                    
+                    if (source.includes('worldtimeapi')) {
+                        // Формат: 2024-01-15T14:30:45.123456+03:00
+                        const datetime = new Date(moscowTimeData.datetime);
+                        timeStr = datetime.toLocaleTimeString('ru-RU', {
+                            timeZone: 'Europe/Moscow',
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                    } else if (source.includes('timeapi')) {
+                        // Формат: "2024-01-15T14:30:45.123456"
+                        const datetime = new Date(moscowTimeData.dateTime);
+                        timeStr = datetime.toLocaleTimeString('ru-RU', {
+                            timeZone: 'Europe/Moscow',
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                    }
+                    
+                    moscowTime.textContent = `Москва: ${timeStr}`;
+                } else {
+                    // Если API недоступны, используем локальное время с поправкой на Москву
+                    fallbackMoscowTime();
+                }
+                
+            } catch (error) {
+                console.log('Ошибка получения времени:', error);
+                fallbackMoscowTime();
+            }
+        }
+        
+        function fallbackMoscowTime() {
+            const now = new Date();
+            const moscowOffset = 3 * 60 * 60 * 1000; // UTC+3 в миллисекундах
+            const moscowTime = new Date(now.getTime() + moscowOffset);
+            
+            const hours = moscowTime.getUTCHours().toString().padStart(2, '0');
+            const minutes = moscowTime.getUTCMinutes().toString().padStart(2, '0');
+            const seconds = moscowTime.getUTCSeconds().toString().padStart(2, '0');
+            
+            moscowTime.textContent = `Москва: ${hours}:${minutes}:${seconds}`;
+        }
+        
+        // УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ
+        function showAmountInputModal() {
+            amountInputModal.style.display = 'flex';
+            amountInput.value = '';
+            amountInput.focus();
+            
+            amountInputModal.style.opacity = '0';
+            setTimeout(() => {
+                amountInputModal.style.transition = 'opacity 0.3s';
+                amountInputModal.style.opacity = '1';
+            }, 10);
+        }
+        
+        function hideAmountInputModal() {
+            amountInputModal.style.opacity = '0';
+            setTimeout(() => {
+                amountInputModal.style.display = 'none';
+            }, 300);
+        }
+        
+        function showPaymentModal() {
+            paymentModalNew.style.display = 'flex';
+            updatePaymentAmountDisplay();
+            
+            paymentModalNew.style.opacity = '0';
+            setTimeout(() => {
+                paymentModalNew.style.transition = 'opacity 0.3s';
+                paymentModalNew.style.opacity = '1';
+            }, 10);
+        }
+        
+        function hidePaymentModal() {
+            paymentModalNew.style.opacity = '0';
+            setTimeout(() => {
+                paymentModalNew.style.display = 'none';
+            }, 300);
+        }
+        
+        function showSuccessStatus() {
+            successStatus.style.display = 'flex';
+            
+            successStatus.style.opacity = '0';
+            setTimeout(() => {
+                successStatus.style.transition = 'opacity 0.3s';
+                successStatus.style.opacity = '1';
+            }, 10);
+        }
+        
+        function hideSuccessStatus() {
+            successStatus.style.opacity = '0';
+            setTimeout(() => {
+                successStatus.style.display = 'none';
+            }, 300);
+        }
+        
+        function showErrorStatus() {
+            errorStatus.style.display = 'flex';
+            
+            errorStatus.style.opacity = '0';
+            setTimeout(() => {
+                errorStatus.style.transition = 'opacity 0.3s';
+                errorStatus.style.opacity = '1';
+            }, 10);
+        }
+        
+        function hideErrorStatus() {
+            errorStatus.style.opacity = '0';
+            setTimeout(() => {
+                errorStatus.style.display = 'none';
+            }, 300);
+        }
+        
+        // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        function shakeElement(element) {
+            element.style.transform = 'translateX(10px)';
+            setTimeout(() => {
+                element.style.transform = 'translateX(-10px)';
+                setTimeout(() => {
+                    element.style.transform = 'translateX(0)';
+                }, 50);
+            }, 50);
+        }
+        
+        function playClickSound() {
+            clickSound.currentTime = 0;
+            clickSound.play().catch(() => {
+                createBeep(1000, 0.1);
+            });
+        }
+        
+        function playSuccessSound() {
+            successSound.currentTime = 0;
+            successSound.play().catch(() => {
+                createBeep(800, 0.1);
+                setTimeout(() => createBeep(1200, 0.2), 100);
+                setTimeout(() => createBeep(1600, 0.3), 300);
+            });
+        }
+        
+        function playErrorSound() {
+            errorSound.currentTime = 0;
+            errorSound.play().catch(() => {
+                createBeep(300, 0.5, 'square');
+                setTimeout(() => createBeep(250, 0.5, 'square'), 100);
+                setTimeout(() => createBeep(200, 0.5, 'square'), 200);
+            });
+        }
+        
+        function createBeep(frequency, duration, type = 'sine') {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = type;
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                // Аудио не поддерживается
+            }
+        }
+        
+        // Тестовые функции
+        console.log('IPPAY TERMINAL v1.0 загружен');
+        console.log('Тройное нажатие на IP для ввода суммы покупки');
+        console.log('Введите любую сумму в рублях (например: 1000, 1500.50, 750.25)');
+        console.log('Приложите карту к NFC зоне (верх экрана) для оплаты');
+    </script>
+</body>
+</html>
