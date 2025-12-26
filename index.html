@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPcloud Bank</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        :root {
+            --primary: #4caf50;
+            --primary-dark: #2e7d32;
+            --surface: #ffffff;
+            --surface-variant: #f5f5f5;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border: rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 20px;
+        }
+        
+        body.dark-theme {
+            --primary: #66bb6a;
+            --primary-dark: #4caf50;
+            --surface: #1a1a1a;
+            --surface-variant: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        body {
+            background: var(--surface);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--surface);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .time {
+            font-weight: 600;
+        }
+        
+        .status-icons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        /* Header */
+        .header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: 0 0 var(--radius) var(--radius);
+            margin-bottom: 20px;
+        }
+        
+        .welcome-text {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .user-email {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Content Area */
+        .content-area {
+            padding: 0 20px 100px;
+            overflow-y: auto;
+            height: calc(100vh - 180px);
+            scroll-behavior: smooth;
+        }
+        
+        .content-area::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Balance Card */
+        .balance-card {
+            background: var(--surface-variant);
+            margin-bottom: 20px;
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .balance-amount {
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+        
+        .card-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .card-number {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .mir-badge {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        /* IRE Bonus */
+        .ire-section {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            padding: 24px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .bonus-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .bonus-amount {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .bonus-timer {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .claim-btn {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 16px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .claim-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .claim-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Sections */
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .action-btn {
+            background: var(--surface-variant);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+        
+        .action-icon {
+            font-size: 24px;
+        }
+        
+        .action-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Transactions */
+        .transactions-section {
+            margin-top: 30px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        
+        .transactions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .transaction-item {
+            background: var(--surface-variant);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .transaction-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+        
+        .transaction-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .transaction-amount {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .amount-positive {
+            color: var(--primary);
+        }
+        
+        .amount-negative {
+            color: #FF5252;
+        }
+        
+        /* Settings */
+        .settings-form {
+            margin-top: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: var(--surface-variant);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--surface-variant);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #FF5252, #D32F2F);
+            color: white;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-around;
+            max-width: 480px;
+            margin: 0 auto;
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            min-width: 60px;
+        }
+        
+        .nav-item.active {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--primary);
+        }
+        
+        .nav-icon {
+            font-size: 22px;
+        }
+        
+        .nav-text {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 16px 24px;
+            box-shadow: var(--shadow);
+            z-index: 3000;
+            display: none;
+            max-width: 400px;
+            width: calc(100% - 40px);
+        }
+        
+        .notification-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .notification-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* Auth Screen */
+        .auth-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px;
+            background: var(--surface);
+        }
+        
+        .auth-logo {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .auth-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text-primary);
+        }
+        
+        .auth-form {
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: var(--surface-variant);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .auth-btn {
+            flex: 1;
+            padding: 18px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .auth-btn.secondary {
+            background: var(--surface-variant);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="appContainer">
+        <!-- Content loaded by JavaScript -->
+    </div>
+
+    <div class="notification" id="notification">
+        <div class="notification-title" id="notificationTitle"></div>
+        <div class="notification-message" id="notificationMessage"></div>
+    </div>
+
+    <script>
+        class IPcloudBank {
+            constructor() {
+                this.users = JSON.parse(localStorage.getItem('ipcloud_users') || '{}');
+                this.currentUser = JSON.parse(localStorage.getItem('ipcloud_current_user') || 'null');
+                this.transactions = JSON.parse(localStorage.getItem('ipcloud_transactions') || '[]');
+                this.ireBonusTime = JSON.parse(localStorage.getItem('ipcloud_ire_bonus_time') || '0');
+                this.currentSection = 'dashboard';
+            }
+            
+            init() {
+                this.updateTime();
+                setInterval(() => this.updateTime(), 1000);
+                this.render();
+                this.applyTheme();
+            }
+            
+            updateTime() {
+                const now = new Date();
+                const timeEl = document.querySelector('.time');
+                if (timeEl) {
+                    timeEl.textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                }
+            }
+            
+            applyTheme() {
+                if (this.currentUser?.theme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                }
+            }
+            
+            showNotification(title, message, type = 'success') {
+                const notification = document.getElementById('notification');
+                notification.innerHTML = `
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                `;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+            
+            registerUser(email, password, name) {
+                if (this.users[email]) {
+                    return { success: false, message: 'Пользователь уже существует' };
+                }
+                
+                if (!/^\d{5}$/.test(password)) {
+                    return { success: false, message: 'Пароль должен быть 5 цифр' };
+                }
+                
+                const user = {
+                    email,
+                    password,
+                    name,
+                    balance: 5000,
+                    cardNumber: this.generateCardNumber(),
+                    theme: 'light',
+                    createdAt: new Date().toISOString()
+                };
+                
+                this.users[email] = user;
+                this.currentUser = user;
+                this.saveData();
+                
+                return { success: true, user };
+            }
+            
+            loginUser(email, password) {
+                const user = this.users[email];
+                if (!user || user.password !== password) {
+                    return { success: false, message: 'Неверная почта или пароль' };
+                }
+                
+                this.currentUser = user;
+                this.saveData();
+                return { success: true, user };
+            }
+            
+            logout() {
+                this.currentUser = null;
+                this.saveData();
+                this.render();
+            }
+            
+            getIreBonus() {
+                const now = Date.now();
+                const timeSinceLastBonus = now - this.ireBonusTime;
+                
+                if (timeSinceLastBonus < 10 * 60 * 1000) {
+                    const minutesLeft = Math.ceil((10 * 60 * 1000 - timeSinceLastBonus) / (60 * 1000));
+                    return { 
+                        success: false, 
+                        message: `Следующий бонус через ${minutesLeft} мин.` 
+                    };
+                }
+                
+                this.currentUser.balance += 1500;
+                this.users[this.currentUser.email] = this.currentUser;
+                this.ireBonusTime = now;
+                
+                this.transactions.push({
+                    id: Date.now(),
+                    type: 'bonus',
+                    amount: 1500,
+                    description: 'Бонус IRE',
+                    date: new Date().toISOString(),
+                    balanceAfter: this.currentUser.balance
+                });
+                
+                this.saveData();
+                localStorage.setItem('ipcloud_ire_bonus_time', this.ireBonusTime);
+                
+                return { 
+                    success: true, 
+                    balance: this.currentUser.balance
+                };
+            }
+            
+            generateCardNumber() {
+                return '2200 ' + Array.from({length: 12}, () => Math.floor(Math.random() * 10))
+                    .join('').replace(/(.{4})/g, '$1 ').trim();
+            }
+            
+            saveData() {
+                localStorage.setItem('ipcloud_users', JSON.stringify(this.users));
+                localStorage.setItem('ipcloud_current_user', JSON.stringify(this.currentUser));
+                localStorage.setItem('ipcloud_transactions', JSON.stringify(this.transactions));
+            }
+            
+            render() {
+                const container = document.getElementById('appContainer');
+                
+                if (!this.currentUser) {
+                    container.innerHTML = this.renderAuthScreen();
+                    this.setupAuthEvents();
+                    return;
+                }
+                
+                container.innerHTML = this.renderMainScreen();
+                this.setupMainEvents();
+                this.showSection(this.currentSection);
+            }
+            
+            renderAuthScreen() {
+                return `
+                    <div class="auth-screen">
+                        <div class="auth-logo">IPcloud</div>
+                        <div class="auth-title">Bank</div>
+                        <div class="auth-form">
+                            <input type="text" class="auth-input" id="authName" placeholder="Имя" autocomplete="off">
+                            <input type="email" class="auth-input" id="authEmail" placeholder="Email" autocomplete="off">
+                            <input type="password" class="auth-input" id="authPassword" placeholder="Пароль (5 цифр)" maxlength="5" autocomplete="off">
+                            <div class="auth-buttons">
+                                <button class="auth-btn secondary" id="loginBtn">Войти</button>
+                                <button class="auth-btn primary" id="registerBtn">Регистрация</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderMainScreen() {
+                const timeSinceLastBonus = Date.now() - this.ireBonusTime;
+                const minutesLeft = Math.max(0, 10 - Math.floor(timeSinceLastBonus / (60 * 1000)));
+                const canClaimBonus = minutesLeft === 0;
+                
+                return `
+                    <div class="status-bar">
+                        <div class="time">--:--</div>
+                        <div class="status-icons">
+                            <span>IPcloud</span>
+                        </div>
+                    </div>
+                    
+                    <div class="header">
+                        <div class="welcome-text">${this.currentUser.name}</div>
+                        <div class="user-email">${this.currentUser.email}</div>
+                    </div>
+                    
+                    <div class="content-area" id="contentArea">
+                        <div class="balance-card">
+                            <div class="balance-label">Баланс</div>
+                            <div class="balance-amount">${this.currentUser.balance.toLocaleString()} ₽</div>
+                            <div class="card-info">
+                                <div class="card-number">${this.currentUser.cardNumber}</div>
+                                <div class="mir-badge">MIR</div>
+                            </div>
+                        </div>
+                        
+                        <div class="ire-section">
+                            <div class="bonus-title">IRE Бонус</div>
+                            <div class="bonus-amount">1 500 ₽</div>
+                            <div>Получайте бонус каждые 10 минут</div>
+                            <button class="claim-btn" id="claimBonusBtn" ${canClaimBonus ? '' : 'disabled'}>
+                                ${canClaimBonus ? 'Забрать бонус' : `Доступно через ${minutesLeft} мин.`}
+                            </button>
+                            <div class="bonus-timer">${canClaimBonus ? 'Бонус доступен!' : `Ожидание: ${minutesLeft} мин.`}</div>
+                        </div>
+                        
+                        <div class="section dashboard active">
+                            ${this.renderDashboard()}
+                        </div>
+                        
+                        <div class="section transactions">
+                            ${this.renderTransactions()}
+                        </div>
+                        
+                        <div class="section settings">
+                            ${this.renderSettings()}
+                        </div>
+                    </div>
+                    
+                    <div class="bottom-nav">
+                        <div class="nav-item active" data-section="dashboard">
+                            <div class="nav-icon">🏠</div>
+                            <div class="nav-text">Главная</div>
+                        </div>
+                        <div class="nav-item" data-section="transactions">
+                            <div class="nav-icon">📊</div>
+                            <div class="nav-text">Операции</div>
+                        </div>
+                        <div class="nav-item" data-section="settings">
+                            <div class="nav-icon">⚙️</div>
+                            <div class="nav-text">Настройки</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderDashboard() {
+                return `
+                    <div class="quick-actions">
+                        <div class="action-btn" id="simulatePaymentBtn">
+                            <div class="action-icon">💳</div>
+                            <div class="action-text">Тест оплаты</div>
+                        </div>
+                        <div class="action-btn" id="viewCardBtn">
+                            <div class="action-icon">👁️</div>
+                            <div class="action-text">Показать карту</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderTransactions() {
+                const transactions = this.transactions.slice(-20).reverse();
+                
+                if (transactions.length === 0) {
+                    return `<div class="section-title">История операций</div><p style="text-align: center; color: var(--text-secondary); padding: 40px;">Нет операций</p>`;
+                }
+                
+                return `
+                    <div class="transactions-section">
+                        <div class="section-title">История операций</div>
+                        <div class="transactions-list">
+                            ${transactions.map(transaction => `
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <h4>${transaction.description}</h4>
+                                        <div class="transaction-date">
+                                            ${new Date(transaction.date).toLocaleDateString()} 
+                                            ${new Date(transaction.date).toLocaleTimeString()}
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount ${transaction.amount > 0 ? 'amount-positive' : 'amount-negative'}">
+                                        ${transaction.amount > 0 ? '+' : ''}${transaction.amount.toLocaleString()} ₽
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderSettings() {
+                return `
+                    <div class="settings-form">
+                        <div class="input-group">
+                            <label>Имя</label>
+                            <input type="text" id="settingsName" value="${this.currentUser.name}">
+                        </div>
+                        <div class="input-group">
+                            <label>Email</label>
+                            <input type="email" id="settingsEmail" value="${this.currentUser.email}" readonly>
+                        </div>
+                        <div class="input-group">
+                            <label>Новый пароль (5 цифр)</label>
+                            <input type="password" id="settingsPassword" placeholder="Оставьте пустым для сохранения" maxlength="5">
+                        </div>
+                        <div class="input-group">
+                            <label>Тема</label>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="theme-option ${this.currentUser.theme === 'light' ? 'active' : ''}" data-theme="light">🌞 Светлая</button>
+                                <button class="theme-option ${this.currentUser.theme === 'dark' ? 'active' : ''}" data-theme="dark">🌙 Темная</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="saveSettingsBtn">Сохранить изменения</button>
+                        <button class="btn btn-danger" id="logoutBtn">Выйти из аккаунта</button>
+                    </div>
+                `;
+            }
+            
+            showSection(sectionName) {
+                this.currentSection = sectionName;
+                
+                // Update active section
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.querySelector(`.section.${sectionName}`)?.classList.add('active');
+                
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.toggle('active', item.dataset.section === sectionName);
+                });
+            }
+            
+            setupAuthEvents() {
+                document.getElementById('loginBtn')?.addEventListener('click', () => {
+                    const email = document.getElementById('authEmail').value;
+                    const password = document.getElementById('authPassword').value;
+                    
+                    if (!email || !password) {
+                        this.showNotification('Ошибка', 'Заполните все поля', 'error');
+                        return;
+                    }
+                    
+                    const result = this.loginUser(email, password);
+                    if (result.success) {
+                        this.applyTheme();
+                        this.showNotification('Успешно', `Добро пожаловать, ${result.user.name}!`);
+                        this.render();
+                    } else {
+                        this.showNotification('Ошибка', result.message, 'error');
+                    }
+                });
+                
+                document.getElementById('registerBtn')?.addEventListener('click', () => {
+                    const name = document.getElementById('authName').value;
+                    const email = document.getElementById('authEmail').value;
+                    const password = document.getElementById('authPassword').value;
+                    
+                    if (!name || !email || !password) {
+                        this.showNotification('Ошибка', 'Заполните все поля', 'error');
+                        return;
+                    }
+                    
+                    const result = this.registerUser(email, password, name);
+                    if (result.success) {
+                        this.showNotification('Успешно', 'Аккаунт создан!');
+                        this.render();
+                    } else {
+                        this.showNotification('Ошибка', result.message, 'error');
+                    }
+                });
+            }
+            
+            setupMainEvents() {
+                // Bottom navigation
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const section = item.dataset.section;
+                        this.showSection(section);
+                    });
+                });
+                
+                // Claim bonus
+                document.getElementById('claimBonusBtn')?.addEventListener('click', () => {
+                    const result = this.getIreBonus();
+                    if (result.success) {
+                        this.showNotification('Успешно', `+1 500 ₽ зачислено!\nБаланс: ${result.balance.toLocaleString()} ₽`);
+                        this.render();
+                    } else {
+                        this.showNotification('Информация', result.message);
+                    }
+                });
+                
+                // Save settings
+                document.getElementById('saveSettingsBtn')?.addEventListener('click', () => {
+                    const name = document.getElementById('settingsName').value;
+                    const password = document.getElementById('settingsPassword').value;
+                    
+                    const data = { name };
+                    if (password && /^\d{5}$/.test(password)) {
+                        data.password = password;
+                    }
+                    
+                    Object.assign(this.currentUser, data);
+                    this.users[this.currentUser.email] = this.currentUser;
+                    this.saveData();
+                    
+                    this.showNotification('Успешно', 'Настройки сохранены');
+                    this.render();
+                });
+                
+                // Theme switching
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('theme-option')) {
+                        const theme = e.target.dataset.theme;
+                        this.currentUser.theme = theme;
+                        this.users[this.currentUser.email] = this.currentUser;
+                        this.saveData();
+                        this.applyTheme();
+                        
+                        // Update active state
+                        document.querySelectorAll('.theme-option').forEach(opt => {
+                            opt.classList.remove('active');
+                        });
+                        e.target.classList.add('active');
+                    }
+                });
+                
+                // Logout
+                document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                    this.logout();
+                });
+                
+                // Simulate payment
+                document.getElementById('simulatePaymentBtn')?.addEventListener('click', () => {
+                    const amount = Math.floor(Math.random() * 500) + 100;
+                    if (this.currentUser.balance >= amount) {
+                        this.currentUser.balance -= amount;
+                        this.users[this.currentUser.email] = this.currentUser;
+                        
+                        this.transactions.push({
+                            id: Date.now(),
+                            type: 'payment',
+                            amount: -amount,
+                            description: 'Тестовая оплата',
+                            date: new Date().toISOString(),
+                            balanceAfter: this.currentUser.balance
+                        });
+                        
+                        this.saveData();
+                        this.showNotification('Оплата', `Списано: ${amount} ₽\nБаланс: ${this.currentUser.balance.toLocaleString()} ₽`);
+                        this.render();
+                    } else {
+                        this.showNotification('Ошибка', 'Недостаточно средств', 'error');
+                    }
+                });
+                
+                // View card
+                document.getElementById('viewCardBtn')?.addEventListener('click', () => {
+                    this.showNotification('Карта', `Номер: ${this.currentUser.cardNumber}\nБаланс: ${this.currentUser.balance.toLocaleString()} ₽`);
+                });
+            }
+        }
+
+        const bank = new IPcloudBank();
+        bank.init();
+        
+        // Update bonus timer every minute
+        setInterval(() => {
+            const claimBtn = document.getElementById('claimBonusBtn');
+            if (claimBtn) {
+                const timeSinceLastBonus = Date.now() - bank.ireBonusTime;
+                const minutesLeft = Math.max(0, 10 - Math.floor(timeSinceLastBonus / (60 * 1000)));
+                const canClaimBonus = minutesLeft === 0;
+                
+                claimBtn.disabled = !canClaimBonus;
+                claimBtn.textContent = canClaimBonus ? 'Забрать бонус' : `Доступно через ${minutesLeft} мин.`;
+                
+                const timerElements = document.querySelectorAll('.bonus-timer');
+                timerElements.forEach(el => {
+                    el.textContent = canClaimBonus ? 'Бонус доступен!' : `Ожидание: ${minutesLeft} мин.`;
+                });
+            }
+        }, 60000);
+        
+        // Theme options styling
+        const style = document.createElement('style');
+        style.textContent = `
+            .theme-option {
+                flex: 1;
+                padding: 12px;
+                border: 2px solid var(--border);
+                border-radius: 10px;
+                background: var(--surface-variant);
+                color: var(--text-primary);
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            .theme-option.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+            .theme-option:hover {
+                transform: translateY(-2px);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
